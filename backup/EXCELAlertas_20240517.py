@@ -1,13 +1,12 @@
 import sqlite3
 import pandas as pd
-import math
 import datetime
 import sqlite3 
 import json
 import openpyxl
 #import warnings
 #import os
-import re
+#import sys
 from tkinter import *
 from tkinter import simpledialog
 import tkinter as tk
@@ -17,18 +16,8 @@ from package import email
 
 # Lista mensagens
 def add_mess_list():
-
-    items = mess_list_names.get(0, "end")
-
-    # Faz extração apenas dos números
-    selected_indices = [re.match(r'(\d+)\.', item).group(1) for item in items if re.match(r'(\d+)\.', item)]
-
-    # Converte para inteiros
-    selected_indices = map(int, selected_indices)
-    #print(mess_list)
     # Verifica se existe uma coluna selecionanda na listbox colunas e se o registo não existe na listbox das mensagens
-    #if columns_list.get(ANCHOR) and columns_list.get(ANCHOR) not in list(mess_list.get(0, END)):
-    if columns_list.get(ANCHOR) and columns_list.get(ANCHOR) not in selected_indices:
+    if columns_list.get(ANCHOR) and columns_list.get(ANCHOR) not in list(mess_list.get(0, END)):
 
         selected_index = columns_list.curselection()
         #print(selected_index )
@@ -36,31 +25,29 @@ def add_mess_list():
             selected_item = columns_list.get(selected_index)
             new_name = simpledialog.askstring("Atribuir nome", f"Nome para coluna {selected_item}:")
 
-          #  print(selected_item)
+            print(selected_item)
             if new_name:
-                #mess_list.insert(END, columns_list.get(ANCHOR))
-                mess_list.append(columns_list.get(ANCHOR))
-                mess_list_names.insert(END, f"{str(columns_list.get(ANCHOR))+'. '+new_name}")       
+                mess_list.insert(END, columns_list.get(ANCHOR))
+                #mess_list_names.delete(selected_index)
+                #mess_list_names.insert(selected_index, f"{new_name}")
+                mess_list_names.insert(END, f"{new_name}")
 
 def delete_mess_list():
     # Para agapar convem ter seleção ativa para não gerar erro
-    if mess_list_names.curselection():
-        index = mess_list_names.curselection()
-        mess_list_names.delete(ANCHOR)
-
-        index = int(index[0])
-        del mess_list[index]
+    if mess_list.curselection():
+        index = mess_list.curselection()
+        mess_list.delete(ANCHOR)
+        
+        mess_list_names.delete(index)
+        #print(index)
 
 def change_name_mess_list():
     # Obter o índice do item selecionado
     selected_index = mess_list_names.curselection()
     if selected_index:
         selected_item = mess_list_names.get(selected_index)
-        part_number = selected_item.split('. ')
-        new_name = simpledialog.askstring("Atribuir nome", f"Nome para coluna {selected_item}:")         
-        
+        new_name = simpledialog.askstring("Atribuir nome", f"Nome para coluna {selected_item}:")
         if new_name:
-            new_name  = part_number[0]+". "+new_name
             mess_list_names.delete(selected_index)
             mess_list_names.insert(selected_index, f"{new_name}")
 
@@ -69,29 +56,16 @@ def change_name_date_list():
     selected_index = date_list_names.curselection()
     if selected_index:
         selected_item = date_list_names.get(selected_index)
-        part_number = selected_item.split('. ')
         new_name = simpledialog.askstring("Atribuir nome", f"Nome para coluna {selected_item}:")
-
         if new_name:
-            new_name  = part_number[0]+". "+new_name
             date_list_names.delete(selected_index)
             date_list_names.insert(selected_index, f"{new_name}")
 
     
 # Lista datas
 def add_date_list():
-
-    items = date_list_names.get(0, "end")
-
-    # Faz extração apenas dos números
-    selected_indices = [re.match(r'(\d+)\.', item).group(1) for item in items if re.match(r'(\d+)\.', item)]
-
-    # Converte para inteiros
-    selected_indices = map(int, selected_indices)
-
     # Verifica se existe uma coluna selecionanda na listbox colunas e se o registo não existe na listbox das datas
-    #if columns_list.get(ANCHOR) and columns_list.get(ANCHOR) not in list(date_list.get(0, END)):
-    if columns_list.get(ANCHOR) and columns_list.get(ANCHOR) not in selected_indices:
+    if columns_list.get(ANCHOR) and columns_list.get(ANCHOR) not in list(date_list.get(0, END)):
 
         selected_index = columns_list.curselection()
         #print(selected_index )
@@ -100,17 +74,21 @@ def add_date_list():
             new_name = simpledialog.askstring("Atribuir nome", f"Nome para coluna {selected_item}:")
 
             if new_name:
-                date_list.append(columns_list.get(ANCHOR))
-                date_list_names.insert(END, f"{str(columns_list.get(ANCHOR))+'. '+new_name}")
+                date_list.insert(END, columns_list.get(ANCHOR))
+
+                #date_list_names.delete(selected_index)
+                #date_list_names.insert(selected_index, f"{new_name}")
+                date_list_names.insert(END, f"{new_name}")
 
 def delete_date_list():
     # Para agapar convem ter seleção ativa para não gerar erro
-    if date_list_names.curselection():
-        index = date_list_names.curselection()
-        date_list_names.delete(ANCHOR)
+    if date_list.curselection():
+        index = date_list.curselection()
+        date_list.delete(ANCHOR)
+        
+        date_list_names.delete(index)
+        #print(index)
 
-        index = int(index[0])
-        del date_list[index]
 
 # Lista de emails
 def add_email_list():
@@ -129,11 +107,11 @@ def del_email_list():
 # Função de atualiza
 def update(id_registro):
  
-    if not mess_list_names.size():
+    if not mess_list.size():
         messagebox.showerror("Erro", "Lista de mensagens vazia.")
         return
     
-    if not date_list_names.size():
+    if not date_list.size():
         messagebox.showerror("Erro", "Lista de datas vazia.")
         return
     
@@ -146,14 +124,14 @@ def update(id_registro):
         return
 
     # Codificar listas para JSON
-    serialized_mess = json.dumps(list(mess_list))
+    serialized_mess = json.dumps(list(mess_list.get(0, END)))
     serialized_mess_names = json.dumps(list(mess_list_names.get(0, END)))
-    serialized_dates = json.dumps(list(date_list))
-
+    serialized_dates = json.dumps(list(date_list.get(0, END)))
     serialized_dates_names = json.dumps(list(date_list_names.get(0, END)))
     serialized_sheets =  json.dumps(list(sheet_combobox["values"]), ensure_ascii=False, default=str)
     serialized_emails = json.dumps(list(email_list.get(0, END)))
-
+   
+   
     # Create a database or connect to one
     conn = sqlite3.connect('database.db')
     # Create cursor
@@ -268,18 +246,11 @@ class ExcelViewerApp:
                 # Clean list
                 selected_indices = [] 
 
-                # Seleciona itens existentes na listbox das mensagens
-                items = mess_list_names.get(0, "end")
-
-                # Faz extração apenas dos números
-                selected_indices = [re.match(r'(\d+)\.', item).group(1) for item in items if re.match(r'(\d+)\.', item)]
-
-                # Converte para inteiros
-                selected_indices = map(int, selected_indices)
+                selected_indices = mess_list.get(0, "end")
                 adjusted_indices = [int(item) - 1 for item in selected_indices]
 
                 try:
-                    self.mess_columns_names = [self.df.columns[i] for i in adjusted_indices]
+                    self.mess_columns = [self.df.columns[i] for i in adjusted_indices]
                 except IndexError as e:
                     messagebox.showerror("Erro", "Vefique se as colunas selecionadas existem.")
                     self.top.destroy()
@@ -294,12 +265,11 @@ class ExcelViewerApp:
                 self.top.protocol("WM_DELETE_WINDOW", self.on_close_top)    
 
                 # Display selected mess columns 
-                if self.mess_columns_names:
+                if self.mess_columns:
 
-                    for col in self.mess_columns_names:
+                    for col in self.mess_columns:
                         frame = Frame(self.top, bg=color)
-                        #frame.pack(side=LEFT, padx=5, pady=5, fill=BOTH, expand=True)
-                        frame.pack(side=LEFT, fill=BOTH, expand=True)
+                        frame.pack(side=LEFT, padx=5, pady=5, fill=BOTH, expand=True)
 
                         label = Label(frame, text=col, bg=color, padx=5, pady=5)
                         label.pack()
@@ -311,20 +281,12 @@ class ExcelViewerApp:
       
                 # Clean list
                 selected_indices = []
-
-                
-                # Seleciona itens existentes na listbox das datas
-                items = date_list_names.get(0, "end")
-
-                # Faz extração apenas dos números
-                selected_indices = [re.match(r'(\d+)\.', item).group(1) for item in items if re.match(r'(\d+)\.', item)]
-
-                # Converte para inteiros
-                selected_indices = map(int, selected_indices)
+                # Mensagens
+                selected_indices = date_list.get(0, "end")
                 adjusted_indices = [int(item) - 1 for item in selected_indices]
 
                 try:
-                    self.dates_columns_names = [self.df.columns[i] for i in adjusted_indices]
+                    self.dates_columns = [self.df.columns[i] for i in adjusted_indices]
                 except IndexError as e:
                     messagebox.showerror("Erro", "Vefique se as colunas selecionadas existem.")
                     self.top.destroy()
@@ -333,10 +295,10 @@ class ExcelViewerApp:
                 color = "#ffd866"
         
                 # Display selected dates  columns 
-                if self.dates_columns_names:
+                if self.dates_columns:
 
-                    for col in self.dates_columns_names:
-                        #print(self.dates_columns)
+                    for col in self.dates_columns:
+                        #print(col)
                         frame = Frame(self.top, bg=color)
                         frame.pack(side=LEFT, padx=5, pady=5, fill=BOTH, expand=True)
 
@@ -368,26 +330,21 @@ def create_html_table(data):
     for line_number, row in enumerate(data[1:], start=1):
         html += "<tr>\n"
         html += f"<td>{line_number}</td>\n"  # Add line number
-
         for col in row:
-            if str(col) == "nan":
-                # Para não aparecer 'nan' nas colunas
-                html += f"<td></td>\n"
-            else:
-                html += f"<td>{col}</td>\n"
+            html += f"<td>{col}</td>\n"
         html += "</tr>\n"
-        
+
     html += "</table>"
 
     return html
 
 def execute():
 
-    if not mess_list_names.size():
+    if not mess_list.size():
         messagebox.showerror("Erro", "Lista de mensagens vazia.")
         return
     
-    if not date_list_names.size():
+    if not date_list.size():
         messagebox.showerror("Erro", "Lista de datas vazia.")
         return
     
@@ -412,10 +369,12 @@ def execute():
     # Sem duplicadas
     df = df_base.drop_duplicates()
 
+    #print(email_list.get(0, "end"))
+
     actual_date = datetime.datetime.now().date()
     #print(date_list.get(0, "end"))
     count_line = 0
-    for i in date_list:
+    for i in date_list.get(0, "end"):
         #print(type(date_list.get(0, "end")))
 
         for index, row in df.iterrows():
@@ -425,37 +384,20 @@ def execute():
                 # Data da validade
                 duedate = date_time.date()
                 
-                # Calcula diferença 
+                # Calcula diferença
                 differece = (duedate - actual_date).days
 
                 # Seleciona itens existentes na listbox das mensagens
-                #selected_indices = mess_list.get(0, "end")        
-                items = mess_list_names.get(0, "end")
-
-                # Faz extração apenas dos números
-                selected_indices = [re.match(r'(\d+)\.', item).group(1) for item in items if re.match(r'(\d+)\.', item)]
-
-                # selected_indices = tuple(map(int, selected_indices))
-                # Converte para inteiros
-                selected_indices = map(int, selected_indices)
-               
-                #print('Tuple2'+str(type(selected_indices2)))
-                #print(numbers)
-            
+                selected_indices = mess_list.get(0, "end")
                 lst_to_add = []
                 list_header = []
 
                 if differece < int(txt_delta.get()):
 
-                    # Para adicionar o nome das colunas
+                    # Para adicionar o none das colunas
                     for index, item in enumerate(selected_indices):
-                        col_name = mess_list_names.get(index).split('. ')
+                        list_header.append(mess_list_names.get(index))
 
-                        #print(item)
-
-                        # Adiciona só o nome da coluna
-                        list_header.append(col_name[1])
-                       
                         #print(type(row.iloc[item-1]))
                         # Algumas colunas de data são lidas como livraria dos pandas e outras data como livraria standard do Python
                         if isinstance(row.iloc[item-1], pd.Timestamp):
@@ -486,7 +428,7 @@ def execute():
     if matriz:
         messagebox.showinfo("Information", f"{len(matriz)-1} linhas enviadas.")
         html_table = create_html_table(matriz)
-      
+
         # Envio de email
         email.send_message(html_table, filename.get(), email_list.get(0, "end"))
     else:
@@ -677,10 +619,9 @@ def form_details(parent, registro):
 
     ################################### Botton Left Frame ####################################
 
-    #global mess_list
-    #mess_list = []
-    #mess_list = Listbox(botton_frame_left, width=10)
-    #mess_list.grid(row=1, column=1, padx=10,  sticky="w")
+    global mess_list
+    mess_list = Listbox(botton_frame_left, width=10)
+    mess_list.grid(row=1, column=1, padx=10,  sticky="w")
 
     mess_fields_label = Label(botton_frame_left, text="Nome das colunas - Mensagens (azul):")
     mess_fields_label.grid(row=0, column=0, padx=8, sticky="w")
@@ -704,9 +645,9 @@ def form_details(parent, registro):
     date_fields_label = Label(botton_frame_left, text="Nome das colunas - Datas (amarelo):")
     date_fields_label.grid(row=3, column=0, padx=8, sticky="ws")
 
-    #global date_list
-    #date_list = Listbox(botton_frame_left, width=10)
-    #date_list.grid(row=4, column=1, padx=10,  sticky="w")
+    global date_list
+    date_list = Listbox(botton_frame_left, width=10)
+    date_list.grid(row=4, column=1, padx=10,  sticky="w")
 
     global date_list_names
     date_list_names = Listbox(botton_frame_left, width=30)
@@ -794,18 +735,18 @@ def query(registro):
     sheet_combobox.set(registro[3])
     checkbox_var.set(registro[11])
 
-    if registro[4]:
-        #The global keyword is used inside the functions to indicate that mess_list refers to the global list defined outside the function, rather than creating a new local list.
-        global mess_list
-        mess_list = json.loads(registro[4])
+    # global checkbox_value
+    # checkbox_value = registro[11]
+
+    # if checkbox_value is None:   
+    #     checkbox_value = 0
+
 
     # Campos de mensagem
-    #if registro[4]:
-     #   mess_list = json.loads(registro[4])
-       #for item in stored_mess:
-           #mess_list.insert(END, item)
-        #mess_list = stored_mess
-        #print(mess_list)
+    if registro[4]:
+        stored_mess = json.loads(registro[4])
+        for item in stored_mess:
+            mess_list.insert(END, item)
 
     # Nomes da coluna mensagem
     if registro[5]:        
@@ -814,10 +755,10 @@ def query(registro):
             mess_list_names.insert(END, item)
 
     # Campos de data
-    if registro[6]:
-        #The global keyword is used inside the functions to indicate that date_list refers to the global list defined outside the function, rather than creating a new local list.
-        global date_list
-        date_list = json.loads(registro[6])
+    if registro[6]:  
+        stored_dates = json.loads(registro[6])
+        for item in stored_dates:
+            date_list.insert(END, item)
 
     # Nomes daa coluna data
     if registro[7]:
@@ -971,8 +912,8 @@ class App:
             filename = registro[1]
             sheet = registro[3]
             date_list =  json.loads(registro[6])
-            #mess_list = json.loads(registro[4])
-            mess_list_names = json.loads(registro[5])      
+            mess_list = json.loads(registro[4])
+            mess_list_names = json.loads(registro[5])
             delta = registro[10]
             emails_list = json.loads(registro[12])
             actual_date = datetime.datetime.now().date()
@@ -995,14 +936,7 @@ class App:
                         differece = (duedate - actual_date).days
 
                         # Seleciona itens existentes na listbox das mensagens (variável)
-                        items = mess_list_names#.get(0, "end")
-
-                        # Faz extração apenas dos números
-                        selected_indices = [re.match(r'(\d+)\.', item).group(1) for item in items if re.match(r'(\d+)\.', item)]     
-
-                        # Converte para inteiros
-                        selected_indices = map(int, selected_indices)  
-
+                        selected_indices = mess_list
                         lst_to_add = []
                         list_header = []
 
@@ -1010,10 +944,7 @@ class App:
 
                             # Para adicionar o none das colunas
                             for index, item in enumerate(selected_indices):
-                                col_name = mess_list_names[index].split('. ')
-
-                                # Adiciona só o nome da colunas
-                                list_header.append(col_name[1])
+                                list_header.append(mess_list_names[index])
 
                                 # Algumas colunas de data são lidas como livraria dos pandas e outras data como livraria standard do Python
                                 if isinstance(row.iloc[item-1], pd.Timestamp):     
@@ -1026,7 +957,6 @@ class App:
                                     dt_without_timestamp = row.iloc[item-1].date()
                                     lst_to_add.append(dt_without_timestamp)
                                 else:
-                                   # print(row.iloc[item-1])
                                     lst_to_add.append(row.iloc[item-1])
                         
                             if count_line == 0:
@@ -1043,6 +973,8 @@ class App:
                 #messagebox.showinfo("Information", f"{len(matriz)-1} linhas enviadas.")
                 html_table = create_html_table(matriz)
                 
+                #print(html_table)
+
                 # Envio de email
                 email.send_message(html_table, filename, emails_list)
 

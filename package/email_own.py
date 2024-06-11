@@ -9,19 +9,15 @@ from email.utils import make_msgid
 
 # Função para envio de email
 #def send_message(names, certificates, duedates):
-def send_message(html_table, filename, emails_list):
+def send_message(html_table, filename):
     #print(duedates)
      
     # Set your email credentials 
-    sender_email = "no_reply@arsopi.pt"
+    sender_email = "joaocdiaas@gmail.com"
     subject = "Alertas - Excel: "+filename
 
     # Recipient email address
-    #receiver_email = "joao.silva@arsopi.pt"
-
-    #receiver_email = emails_list
-
-    #print(emails_list)
+    receiver_email = "joaocdiaas@gmail.com"
 
     # Faz quebra de linha no corpo do email
     #email_body = '<br>'.join(message_to_send)
@@ -34,9 +30,9 @@ def send_message(html_table, filename, emails_list):
     message = MIMEMultipart()
     message['From'] = sender_email
     message['Subject'] = subject
-    #message['To'] = receiver_email
-    message['To'] = ', '.join(emails_list)
+    message['To'] = receiver_email
 
+    password = 'bceb piov xzzh oogb'
     # # Convert list to HTML table
     # table_html = "<table border='1'>"
     # table_html += "<tr><th>#</th><th>NOMES</th><th>CERTIFICADO</th><th>VALIDADE CERTIFICADO</th></tr>"
@@ -51,12 +47,12 @@ def send_message(html_table, filename, emails_list):
     
 
     # # Set up the SMTP server (for Gmail, use port 587)
-    smtp_server = "arsopi-pt.mail.protection.outlook.com"
-    smtp_port = 25
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
 
      # Start the SMTP server session
     with smtplib.SMTP(smtp_server, smtp_port) as server:
         server.starttls()  # Use TLS
-
+        server.login(sender_email, password)
         # Send the email
-        server.sendmail(sender_email, emails_list, message.as_string())
+        server.sendmail(sender_email, receiver_email, message.as_string())
